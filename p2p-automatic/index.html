@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC P2P Automatic</title>
+  <style>
+    video { width: 45%; margin: 10px; border: 1px solid #ccc; }
+    .status { margin: 10px; padding: 10px; background-color: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h2>WebRTC P2P - Automatic Connection</h2>
+  <div class="status" id="status">Connecting to signaling server...</div>
+
+  <video id="localVideo" autoplay muted playsinline></video>
+  <video id="remoteVideo" autoplay playsinline></video>
+
+  <script>
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const statusDiv = document.getElementById('status');
+
+    // Create WebSocket connection
+    const ws = new WebSocket(`ws://${window.location.host}`);
+    
+    // Create RTCPeerConnection
+    const peer = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+
+    // WebSocket event handlers
+    ws.onopen = () => {
+      statusDiv.textContent = 'Connected to signaling server. Waiting for peer...';
+    };
+
+    ws.onclose = () => {
+      statusDiv.textContent = 'Disconnected from signaling server';
+    };
+
+    ws.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+
+      console.log('message', message);
+      
+      if (message.type === 'offer') {
+        statusDiv.textContent = 'Received offer. Creating answer...';
+        await peer.setRemoteDescription(new RTCSessionDescription(message));
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        ws.send(JSON.stringify({
+          type: 'answer',
+          sdp: answer
+        }));
+      } 
+      else if (message.type === 'answer') {
+        statusDiv.textContent = 'Received answer. Setting up connection...';
+        await peer.setRemoteDescription(new RTCSessionDescription(message.sdp));
+      }
+      else if (message.candidate) {
+        try {
+          await peer.addIceCandidate(new RTCIceCandidate(message.candidate));
+        } catch (e) {
+          console.error('Error adding received ice candidate', e);
+        }
+      }
+    };
+
+    // WebRTC event handlers
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
+        ws.send(JSON.stringify({
+          type: 'candidate',
+          candidate: event.candidate
+        }));
+      }
+    };
+
+    peer.ontrack = (event) => {
+      remoteVideo.srcObject = event.streams[0];
+      statusDiv.textContent = 'Connected to peer!';
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      statusDiv.textContent = `ICE Connection State: ${peer.iceConnectionState}`;
+    };
+
+    // Start local video
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        localVideo.srcObject = stream;
+        stream.getTracks().forEach(track => peer.addTrack(track, stream));
+        
+        // Create and send offer if we're the first peer
+        if (ws.readyState === WebSocket.OPEN) {
+          createAndSendOffer();
+        } else {
+          ws.onopen = createAndSendOffer;
+        }
+      })
+      .catch(error => {
+        console.error('Error accessing media devices:', error);
+        statusDiv.textContent = 'Error accessing camera and microphone';
+      });
+
+    async function createAndSendOffer() {
+      try {
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+        ws.send(JSON.stringify(offer));
+        statusDiv.textContent = 'Created and sent offer. Waiting for answer...';
+      } catch (error) {
+        console.error('Error creating offer:', error);
+        statusDiv.textContent = 'Error creating offer';
+      }
+    }
+  </script>
+</body>
+</html> 

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC P2P Manual</title>
+  <!-- Basic styling for video elements, textarea and buttons -->
+  <style>
+    video { width: 45%; margin: 10px; border: 1px solid #ccc; }
+    textarea { width: 100%; height: 150px; }
+    button { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>WebRTC P2P - Copy and Paste</h2>
+
+  <!-- Local video element (muted by default to prevent echo) -->
+  <video id="localVideo" autoplay muted playsinline></video>
+  <!-- Remote video element to display the other peer's stream -->
+  <video id="remoteVideo" autoplay playsinline></video>
+
+  <div>
+    <!-- Buttons for WebRTC signaling process -->
+    <button onclick="createOffer()">Create Offer (User A)</button>
+    <button onclick="createAnswer()">Create Answer (User B)</button>
+    <button onclick="setRemote()">Insert Other's Code</button>
+    <br>
+    <!-- Textarea for copying and pasting SDP (Session Description Protocol) data -->
+    <textarea id="sdp" placeholder="Paste here or copy the generated code..."></textarea>
+  </div>
+
+  <script>
+    // Get references to DOM elements
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const sdpTextarea = document.getElementById('sdp');
+
+    // Create a new RTCPeerConnection with Google's STUN server for NAT traversal
+    const peer = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+
+    // Event handler for ICE candidates
+    // ICE candidates are potential connection methods between peers
+    peer.onicecandidate = () => {
+      // Automatically updates the textarea with offer/answer + ICEs
+      sdpTextarea.value = JSON.stringify(peer.localDescription);
+    };
+
+    // Event handler for when a remote stream is received
+    peer.ontrack = (event) => {
+      // Set the remote video source to the received stream
+      remoteVideo.srcObject = event.streams[0];
+    };
+
+    // Request access to user's camera and microphone
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        // Display local video stream
+        localVideo.srcObject = stream;
+        // Add all tracks from the stream to the peer connection
+        stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      });
+
+    // Function to create and set a new offer (for User A)
+    async function createOffer() {
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+    }
+
+    // Function to create and set an answer (for User B)
+    async function createAnswer() {
+      // Parse the offer from the textarea
+      const offer = JSON.parse(sdpTextarea.value);
+      // Set the remote description (offer) first
+      await peer.setRemoteDescription(new RTCSessionDescription(offer));
+      // Create and set the answer
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+    }
+
+    // Function to set the remote description from copied SDP
+    async function setRemote() {
+      const remoteDesc = JSON.parse(sdpTextarea.value);
+      await peer.setRemoteDescription(new RTCSessionDescription(remoteDesc));
+    }
+  </script>
+</body>
+</html>

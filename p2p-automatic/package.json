@@ -1,0 +1,17 @@
+{
+  "name": "webrtc-p2p-video-call",
+  "version": "1.0.0",
+  "description": "WebRTC P2P video call with WebSocket signaling",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "concurrently": "^8.2.2"
+  }
+} 
