@@ -1,5 +1,3 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
 import { ThemeToggle } from '../shared/components/ThemeToggle';
 import JoinMeeting from '../shared/components/JoinMeeting/JoinMeeting';
 

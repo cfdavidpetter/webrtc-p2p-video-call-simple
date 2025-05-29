@@ -72,35 +72,3 @@ This implementation uses WebRTC (Web Real-Time Communication) to establish direc
 2. Allow camera and microphone access when prompted
 3. The connection will be established automatically
 4. Once connected, you should see and hear the other person
-
-## Security Considerations
-
-- Peer-to-peer connections are encrypted
-- Media data is transmitted directly between peers
-- WebSocket server only handles signaling
-- Uses secure WebRTC protocols for media transmission
-
-## Technical Details
-
-- Uses Express.js for serving static files
-- WebSocket (ws) for real-time signaling
-- Google's STUN server for NAT traversal
-- Modern WebRTC APIs for peer connection management
-
-## Limitations
-
-- Requires a signaling server for initial connection
-- No built-in chat functionality
-- No screen sharing feature
-- Basic error handling
-
-## Dependencies
-
-- express: ^4.18.2
-- ws: ^8.16.0
-- http-server: ^14.1.1 (dev)
-- concurrently: ^8.2.2 (dev)
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!

@@ -11,6 +11,7 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "dotenv": "^16.5.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-scripts": "^5.0.1",
@@ -19,6 +20,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "start:ws": "node server-ws.js",
+    "dev": "concurrently \"npm run start\" \"npm run start:ws\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -43,6 +46,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
+    "concurrently": "^8.2.2",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.0"
   }
